@@ -21,8 +21,12 @@
 #endif
 
 #ifndef __APPLE__
-#  define GLEW_STATIC
-#  include <GL/glew.h>
+#	ifdef NANOGUI_GLAD
+#		include <glad/glad.h>
+#	else
+#		define GLEW_STATIC
+#		include <GL/glew.h>
+#	endif
 #endif
 
 #ifdef __APPLE__

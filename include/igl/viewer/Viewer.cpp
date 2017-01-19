@@ -20,8 +20,12 @@
 #include <thread>
 
 #ifndef __APPLE__
-#  define GLEW_STATIC
-#  include <GL/glew.h>
+#	ifdef NANOGUI_GLAD
+#		include <glad/glad.h>
+#	else
+#		define GLEW_STATIC
+#		include <GL/glew.h>
+#	endif
 #endif
 
 #ifdef __APPLE__
@@ -83,6 +87,10 @@ static igl::viewer::Viewer * __viewer;
 static double highdpi = 1;
 static double scroll_x = 0;
 static double scroll_y = 0;
+
+#if defined(NANOGUI_GLAD)
+static bool gladInitialized = false;
+#endif
 
 static void glfw_mouse_press(GLFWwindow* window, int button, int action, int modifier)
 {
@@ -906,7 +914,15 @@ namespace viewer
 
     glfwMakeContextCurrent(window);
 
-    #ifndef __APPLE__
+#ifndef __APPLE__
+#	if defined(NANOGUI_GLAD)
+	if (!gladInitialized) {
+		gladInitialized = true;
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+			throw std::runtime_error("Could not initialize GLAD!");
+		glGetError(); // pull and ignore unhandled errors like GL_INVALID_ENUM
+	}
+#	else
       glewExperimental = true;
       GLenum err = glewInit();
       if(GLEW_OK != err)
@@ -916,7 +932,8 @@ namespace viewer
       }
       glGetError(); // pull and savely ignonre unhandled errors like GL_INVALID_ENUM
       fprintf(stdout, "Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
-    #endif
+#	endif
+#endif
 
     #if defined(DEBUG) || defined(_DEBUG)
       int major, minor, rev;
